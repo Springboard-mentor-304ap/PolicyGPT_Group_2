@@ -1,8 +1,13 @@
+from ast import compare
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.api.routes.auth import router as auth_router
 from app.api.routes.users import router as users_router
+from app.api.routes.schemas import router as schemes_router
+from app.api.routes.eligibility import router as eligibility_router
+from app.api.routes.compare import router as compare_routers
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -31,7 +36,9 @@ def health_check():
 # Mount versioned API routers
 app.include_router(auth_router, prefix=settings.API_V1_STR)
 app.include_router(users_router, prefix=settings.API_V1_STR)
-
+app.include_router(schemes_router, prefix=settings.API_V1_STR)
+app.include_router(eligibility_router, prefix=settings.API_V1_STR)
+app.include_router(compare_routers, prefix="/api/v1")    
 
 if __name__ == "__main__":
     import uvicorn
