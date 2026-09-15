@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "PolicyGPT"
+description = "A government policy and public scheme intelligence platform for citizens, officials, researchers, and organizations to discover, understand, compare, and track public programs."
+version = "1.0.0"
+id = "artifacts/policygpt"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 18474
+
+[services.development]
+run = "pnpm --filter @workspace/policygpt run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/policygpt", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/policygpt/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "18474"
+BASE_PATH = "/"

@@ -1,0 +1,1 @@
+- [PolicyGPT auth and persistence](policygpt-auth-persistence.md) — initialize persisted seed data before authenticated traffic and keep Clerk web auth cookie-based.
