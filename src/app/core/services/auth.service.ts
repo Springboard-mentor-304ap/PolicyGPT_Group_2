@@ -18,6 +18,7 @@ import { UserRead, UserRole } from '../../models/user.models';
 import { User } from '../../models/user.model';
 import { Role, normalizeRole, toDisplayRole, toBackendRole } from '../../models/role.model';
 import { AssistantService } from './assistant.service';
+import { NotificationService } from './notification.service';
 
 @Injectable({
   providedIn: 'root'
@@ -26,6 +27,7 @@ export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
   private readonly assistantService = inject(AssistantService);
+  private readonly notificationService = inject(NotificationService);
 
   private readonly API_URL = environment.apiUrl;
   private readonly TOKEN_KEY = 'policy_gpt_token';
@@ -238,6 +240,12 @@ export class AuthService {
     // Completely reset AI Assistant state to prevent any cross-user session leaks
     this.assistantService.resetSession();
 
+    // Reset notification service signals
+    this.notificationService.reset();
+
+    // Clear stored private user profile caches (e.g. citizen eligibility demographic data)
+    this.clearPrivateUserData();
+
     localStorage.removeItem(this.TOKEN_KEY);
     localStorage.removeItem(this.USER_KEY);
     this.currentUserSignal.set(null);
@@ -258,8 +266,10 @@ export class AuthService {
       (previousUser && user && (previousUser.id !== user.id || previousUser.role !== user.role));
 
     if (identityChanged) {
-      // Identity or role changed: immediately purge assistant state
+      // Identity or role changed: immediately purge assistant state and notification counters
       this.assistantService.resetSession();
+      this.notificationService.reset();
+      this.clearPrivateUserData();
     }
 
     if (user) {
@@ -268,6 +278,24 @@ export class AuthService {
       localStorage.removeItem(this.USER_KEY);
     }
     this.currentUserSignal.set(user);
+  }
+
+  /**
+   * Helper to clean up any cached citizen profiles or private form caches from storage.
+   */
+  private clearPrivateUserData(): void {
+    try {
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('policy_gpt_citizen_profile_')) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach((k) => localStorage.removeItem(k));
+    } catch (e) {
+      console.warn('Could not clear private user profiles from storage:', e);
+    }
   }
 
 

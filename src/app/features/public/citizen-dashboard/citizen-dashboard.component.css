@@ -82,3 +82,30 @@
   }
 }
 
+/* 2K & 4K Floating Assistant & Dashboard Scaling */
+@media (min-width: 1920px) {
+  .floating-ai-assistant-btn {
+    bottom: 32px;
+    right: 32px;
+    padding: 14px 24px;
+    font-size: 1rem;
+    gap: 10px;
+  }
+  .floating-ai-assistant-btn .bot-icon {
+    font-size: 1.35rem;
+  }
+}
+
+@media (min-width: 2400px) {
+  .floating-ai-assistant-btn {
+    bottom: 44px;
+    right: 44px;
+    padding: 18px 30px;
+    font-size: 1.15rem;
+    gap: 12px;
+  }
+  .floating-ai-assistant-btn .bot-icon {
+    font-size: 1.6rem;
+  }
+}
+

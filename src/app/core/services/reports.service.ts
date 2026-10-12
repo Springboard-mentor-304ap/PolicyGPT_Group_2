@@ -157,6 +157,8 @@ export class ReportsService {
         filename = match[1].replace(/['"]/g, '');
       }
     }
+    // Sanitize filename to prevent directory traversal or control characters
+    filename = filename.replace(/[/\\?%*:|"<>]/g, '_').trim() || defaultFilename;
 
     const blobUrl = window.URL.createObjectURL(blob);
     const link = document.createElement('a');

@@ -168,6 +168,14 @@ export class EditScheme implements OnInit {
       return;
     }
 
+    if (this.applicationUrl().trim()) {
+      const appUrl = this.applicationUrl().trim();
+      if (!appUrl.startsWith('http://') && !appUrl.startsWith('https://')) {
+        this.errorMessage.set('Application URL must begin with http:// or https://');
+        return;
+      }
+    }
+
     const tagsArray = this.tags().trim()
       ? this.tags().split(',').map(t => t.trim()).filter(Boolean)
       : original.tags || [];

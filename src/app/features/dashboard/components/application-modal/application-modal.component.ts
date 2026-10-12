@@ -119,6 +119,27 @@ export class ApplicationModalComponent implements OnInit, OnChanges {
       this.errorMessage = 'Please provide applicant full name.';
       return;
     }
+    if (this.applicantEmail.trim()) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(this.applicantEmail.trim())) {
+        this.errorMessage = 'Please provide a valid email address.';
+        return;
+      }
+    }
+    if (this.applicantPhone.trim()) {
+      const phoneRegex = /^\+?[0-9\s-]{7,15}$/;
+      if (!phoneRegex.test(this.applicantPhone.trim())) {
+        this.errorMessage = 'Please provide a valid contact number (7-15 digits).';
+        return;
+      }
+    }
+    if (this.applicantAadhaar.trim()) {
+      const aadhaarDigits = this.applicantAadhaar.trim().replace(/\s/g, '');
+      if (!/^\d{4}$|^\d{12}$/.test(aadhaarDigits)) {
+        this.errorMessage = 'Please enter either the last 4 digits or 12 digits of your Aadhaar number.';
+        return;
+      }
+    }
     if (!this.agreeDeclaration) {
       this.errorMessage = 'You must confirm the truthfulness declaration before proceeding.';
       return;

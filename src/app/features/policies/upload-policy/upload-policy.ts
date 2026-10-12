@@ -209,6 +209,15 @@ export class UploadPolicy {
       return;
     }
 
+    if (this.effectiveDate() && this.expiryDate()) {
+      const eff = new Date(this.effectiveDate()).getTime();
+      const exp = new Date(this.expiryDate()).getTime();
+      if (!isNaN(eff) && !isNaN(exp) && exp < eff) {
+        this.errorMessage.set('Expiry Date cannot be earlier than Effective Date.');
+        return;
+      }
+    }
+
     // Check if document is uploaded or generate a placeholder
     const docName = this.selectedFileName() || `${this.policyName().trim().replace(/\s+/g, '_')}.pdf`;
     const docSize = this.selectedFileSize() || '2.1 MB';

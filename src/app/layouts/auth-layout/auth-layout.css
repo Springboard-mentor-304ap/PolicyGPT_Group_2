@@ -70,28 +70,44 @@
   gap: 16px;
 }
 
-.brand-logo {
+.brand-logo-link {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+  border-radius: 14px;
+  transition: transform 0.2s ease;
+}
+
+.brand-logo-link:hover {
+  transform: scale(1.04);
+}
+
+.brand-logo-img {
   width: 58px;
   height: 58px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  font-size: 28px;
-  font-weight: 800;
-  color: #ffffff;
+  object-fit: contain;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
   flex-shrink: 0;
+  display: block;
+}
+
+.brand-logo {
+  display: none;
 }
 
 .brand-title {
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   font-size: 30px;
   font-weight: 800;
   margin: 0;
   line-height: 1.2;
   color: #ffffff;
   letter-spacing: -0.5px;
+}
+
+.brand-title-accent {
+  color: #60A5FA;
 }
 
 .brand-desc {
@@ -264,18 +280,29 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
 }
 
 .theme-btn:hover {
   background: #edf2f7;
   color: #1e293b;
   border-color: #cbd5e1;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.15);
+}
+
+.theme-btn:active {
+  transform: scale(0.92);
 }
 
 .theme-svg {
   width: 18px;
   height: 18px;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease;
+}
+
+.theme-btn:hover .theme-svg {
+  transform: rotate(20deg) scale(1.1);
 }
 
 .auth-panel-inner {

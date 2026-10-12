@@ -232,14 +232,22 @@ export class Feedback implements OnInit {
    */
   submitFeedback(): void {
     const subject = this.formSubject().trim();
-    if (!subject) {
-      this.submitErrorMsg.set('Please provide a subject for your request.');
+    if (!subject || subject.length < 3) {
+      this.submitErrorMsg.set('Please provide a subject with at least 3 characters.');
+      return;
+    }
+    if (subject.length > 200) {
+      this.submitErrorMsg.set('Subject must not exceed 200 characters.');
       return;
     }
 
     const content = this.formContent().trim();
-    if (!content) {
-      this.submitErrorMsg.set('Please provide details or a description for your request.');
+    if (!content || content.length < 10) {
+      this.submitErrorMsg.set('Please provide details or a description of at least 10 characters.');
+      return;
+    }
+    if (content.length > 3000) {
+      this.submitErrorMsg.set('Feedback details must not exceed 3000 characters.');
       return;
     }
 

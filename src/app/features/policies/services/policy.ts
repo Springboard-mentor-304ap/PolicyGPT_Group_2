@@ -81,6 +81,14 @@ export class Policy {
   }
 
   /**
+   * Reset local policies in memory to initial default values (useful for tests and state resets).
+   */
+  resetToDefaults(): void {
+    this._policies.set([...INITIAL_POLICIES]);
+    this._error.set(null);
+  }
+
+  /**
    * Returns all current policies in memory.
    */
   getAll(): PolicyItem[] {
@@ -149,7 +157,7 @@ export class Policy {
    * Synchronous creation for existing components.
    */
   create(newPolicy: Omit<PolicyItem, 'updatedAt'>): PolicyItem {
-    const tempId = `TEMP-${Date.now()}`;
+    const tempId = newPolicy.id || `TEMP-${Date.now()}`;
     const today = this.formatDate(new Date());
     const optimisticItem: PolicyItem = {
       ...newPolicy,

@@ -2,11 +2,11 @@
   <!-- LEFT BRANDING PANEL -->
   <section class="branding-panel">
     <div class="brand-header">
-      <div class="brand-logo" aria-hidden="true">
-        P
-      </div>
+      <a [routerLink]="'/citizen'" class="brand-logo-link" aria-label="PolicyGPT Citizen Portal">
+        <img src="/assets/logo-icon.png" alt="PolicyGPT" class="brand-logo-img">
+      </a>
       <div>
-        <h1 class="brand-title">PolicyGPT</h1>
+        <h1 class="brand-title">Policy<span class="brand-title-accent">GPT</span></h1>
         <p class="brand-desc">
           Government Policy &amp; Public Scheme<br>
           Intelligence Platform

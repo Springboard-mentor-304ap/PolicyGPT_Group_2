@@ -98,6 +98,12 @@ export class ResetPassword implements OnInit {
       return;
     }
 
+    if (this.newPassword.length > 128) {
+      this.errorMessage = 'Password must not exceed 128 characters.';
+      this.cdr.detectChanges();
+      return;
+    }
+
     if (this.newPassword !== this.confirmPassword) {
       this.errorMessage = 'Passwords do not match.';
       this.cdr.detectChanges();

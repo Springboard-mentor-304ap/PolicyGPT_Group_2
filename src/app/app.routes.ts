@@ -42,6 +42,15 @@ export const routes: Routes = [
         redirectTo: 'public/faqs',
         pathMatch: 'full'
     },
+    {
+        path: 'public/about',
+        loadComponent: () => import('./features/public/public-about/public-about.component').then((m) => m.PublicAboutComponent)
+    },
+    {
+        path: 'about',
+        redirectTo: 'public/about',
+        pathMatch: 'full'
+    },
 
     // 2. Public Auth routes (inside AuthLayoutComponent)
     {

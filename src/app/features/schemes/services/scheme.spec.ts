@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
 import { Scheme } from './scheme';
 import { INITIAL_SCHEMES } from '../../../models/scheme.model';
 
@@ -7,8 +8,11 @@ describe('Scheme Service', () => {
 
   beforeEach(() => {
     localStorage.clear();
-    TestBed.configureTestingModule({});
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient()]
+    });
     service = TestBed.inject(Scheme);
+    service.resetToDefaults();
   });
 
   afterEach(() => {

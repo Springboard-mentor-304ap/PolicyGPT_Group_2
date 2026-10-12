@@ -1,8 +1,9 @@
 <header class="public-header">
   <div class="header-container">
     <div class="header-left">
-      <a routerLink="/citizen" class="logo-link">
-        <span class="logo-text">PolicyGPT</span>
+      <a routerLink="/citizen" class="logo-link" aria-label="PolicyGPT Citizen Portal">
+        <img src="/assets/logo-icon.png" alt="PolicyGPT" class="logo-icon-img" width="36" height="36">
+        <span class="logo-text">Policy<span class="logo-highlight">GPT</span></span>
       </a>
     </div>
 
@@ -12,11 +13,8 @@
       <a routerLink="/public/policies" routerLinkActive="active" class="nav-link" data-path="policies">Policies</a>
       <a routerLink="/public/schemes" routerLinkActive="active" class="nav-link" data-path="schemes">Schemes</a>
       <a routerLink="/public/faqs" routerLinkActive="active" class="nav-link" data-path="faqs">FAQs</a>
-      <a routerLink="/citizen" fragment="how-it-works" class="nav-link" data-path="about">About</a>
+      <a routerLink="/about" routerLinkActive="active" class="nav-link" data-path="about">About</a>
       <a href="javascript:void(0)" (click)="openAssistant()" class="nav-link" data-path="help">Help</a>
-      @if (auth.isAuthenticated()) {
-      <a routerLink="/dashboard" class="nav-link auth-dashboard-link" data-path="dashboard">Role Dashboard</a>
-      }
     </nav>
 
     <div class="header-actions">
@@ -66,15 +64,9 @@
       data-path="policies">Policies</a>
     <a routerLink="/public/schemes" (click)="closeMobileMenu()" class="mobile-nav-link" data-path="schemes">Schemes</a>
     <a routerLink="/public/faqs" (click)="closeMobileMenu()" class="mobile-nav-link" data-path="faqs">FAQs</a>
-    <a routerLink="/citizen" fragment="how-it-works" (click)="closeMobileMenu()" class="mobile-nav-link"
-      data-path="about">About</a>
+    <a routerLink="/about" (click)="closeMobileMenu()" class="mobile-nav-link" data-path="about">About</a>
     <a href="javascript:void(0)" (click)="openAssistant()" class="mobile-nav-link"
       data-path="help">Help</a>
-
-    @if (auth.isAuthenticated()) {
-    <a routerLink="/dashboard" (click)="closeMobileMenu()" class="mobile-nav-link auth-dashboard-link">Role
-      Dashboard</a>
-    }
     <div class="mobile-auth-actions">
       <a routerLink="/login" (click)="closeMobileMenu()" class="btn-login" data-path="login">Login</a>
       <a routerLink="/register" (click)="closeMobileMenu()" class="btn-register" data-path="register">Register</a>

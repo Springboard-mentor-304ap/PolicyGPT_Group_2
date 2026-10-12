@@ -1,9 +1,10 @@
-import { TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 import { Eligibility } from './eligibility';
 import { SchemeService } from '../../core/services/scheme.service';
 import { provideHttpClient } from '@angular/common/http';
 import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 describe('Eligibility Component (5-UI Flow)', () => {
   let component: Eligibility;
@@ -48,8 +49,9 @@ describe('Eligibility Component (5-UI Flow)', () => {
     expect(component.errorMessage()).toContain('valid age');
   });
 
-  it('should progress through Step 3 (analyzing) and transition to Step 4 (results)', fakeAsync(() => {
-    spyOn(schemeService, 'checkEligibility').and.returnValue(of({
+  it('should progress through Step 3 (analyzing) and transition to Step 4 (results)', () => {
+    vi.useFakeTimers();
+    vi.spyOn(schemeService, 'checkEligibility').mockReturnValue(of({
       eligible_schemes: [
         {
           scheme_id: 201,
@@ -69,17 +71,18 @@ describe('Eligibility Component (5-UI Flow)', () => {
     expect(component.currentStep()).toBe('analyzing');
     expect(component.scanStep()).toBe(1);
 
-    tick(800);
+    vi.advanceTimersByTime(800);
     expect(component.scanStep()).toBe(2);
 
-    tick(900);
+    vi.advanceTimersByTime(900);
     expect(component.scanStep()).toBe(3);
 
-    tick(600);
+    vi.advanceTimersByTime(600);
     expect(component.currentStep()).toBe('results');
     expect(component.results().length).toBeGreaterThan(0);
     expect(component.totalMatches()).toBeGreaterThanOrEqual(1);
-  }));
+    vi.useRealTimers();
+  });
 
   it('should open and close Step 5 (Scheme Details Modal)', () => {
     const testScheme = {

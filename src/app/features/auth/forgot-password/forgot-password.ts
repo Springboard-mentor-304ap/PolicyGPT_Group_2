@@ -29,6 +29,13 @@ export class ForgotPassword {
       return;
     }
 
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(targetEmail)) {
+      this.errorMessage = 'Please enter a valid email address.';
+      this.cdr.detectChanges();
+      return;
+    }
+
     this.isSubmitting = true;
     this.cdr.detectChanges();
 
@@ -46,10 +53,7 @@ export class ForgotPassword {
       error: (err) => {
         this.isSubmitting = false;
         if (err.status === 0) {
-          // Dev fallback
-          this.router.navigate(['/reset-password'], {
-            queryParams: { email: targetEmail }
-          });
+          this.errorMessage = 'Unable to connect to the authentication server. Please check your network connection.';
         } else {
           this.errorMessage = err.error?.detail || 'Failed to request password reset. Please try again.';
         }

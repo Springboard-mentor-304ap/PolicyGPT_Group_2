@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { provideHttpClient } from '@angular/common/http';
 import { Policies } from './policies';
 import { Policy } from './services/policy';
 
@@ -13,6 +14,7 @@ describe('Policies Component', () => {
       imports: [Policies],
       providers: [
         provideRouter([]),
+        provideHttpClient(),
         Policy
       ]
     }).compileComponents();

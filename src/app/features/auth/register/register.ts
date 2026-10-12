@@ -53,14 +53,27 @@ export class Register {
       return;
     }
 
-    if (name.length < 2) {
-      this.errorMessage = 'Full Name must be at least 2 characters.';
+    if (name.length < 2 || name.length > 100) {
+      this.errorMessage = 'Full Name must be between 2 and 100 characters.';
+      this.cdr.detectChanges();
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email) || email.length > 255) {
+      this.errorMessage = 'Please provide a valid email address.';
       this.cdr.detectChanges();
       return;
     }
 
     if (password.length < 8) {
       this.errorMessage = 'Password must be at least 8 characters long.';
+      this.cdr.detectChanges();
+      return;
+    }
+
+    if (password.length > 128) {
+      this.errorMessage = 'Password must not exceed 128 characters.';
       this.cdr.detectChanges();
       return;
     }

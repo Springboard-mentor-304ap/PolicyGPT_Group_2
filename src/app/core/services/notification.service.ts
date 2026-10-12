@@ -34,6 +34,14 @@ export class NotificationService {
   readonly recentNotifications = signal<NotificationRead[]>([]);
 
   /**
+   * Reset notification state on logout or identity transition to prevent data leakage.
+   */
+  reset(): void {
+    this.unreadCount.set(0);
+    this.recentNotifications.set([]);
+  }
+
+  /**
    * List notifications for current authenticated user with filters and pagination.
    * GET /api/v1/notifications
    */

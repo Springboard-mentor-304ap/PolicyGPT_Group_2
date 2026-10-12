@@ -329,7 +329,7 @@
           Cancel
         </button>
         <div class="submit-actions-group">
-          <button type="button" class="btn-form-draft" (click)="saveAsDraft()" [disabled]="isSubmitting()">
+          <button type="button" class="btn-form-save-draft btn-form-draft" (click)="saveAsDraft()" [disabled]="isSubmitting()">
             @if (isSubmitting()) {
               <span class="btn-spinner"></span>
               <span>Saving Draft...</span>
@@ -337,7 +337,7 @@
               <span>Save as Draft</span>
             }
           </button>
-          <button type="submit" class="btn-form-save-changes" [disabled]="isSubmitting()">
+          <button type="submit" class="btn-form-submit btn-form-save-changes" [disabled]="isSubmitting()">
             @if (isSubmitting()) {
               <span class="btn-spinner"></span>
               <span>Creating Scheme...</span>

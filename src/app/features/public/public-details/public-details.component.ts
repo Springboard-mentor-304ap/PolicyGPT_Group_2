@@ -375,7 +375,12 @@ export class PublicDetailsComponent implements OnInit {
   }
 
   openOfficialPortal(): void {
-    const url = this.detail()?.officialUrl || 'https://india.gov.in';
-    window.open(url, '_blank');
+    const rawUrl = this.detail()?.officialUrl?.trim() || 'https://india.gov.in';
+    // Validate URL protocol scheme to prevent javascript: or malformed URIs, and prevent reverse tab-napping
+    if (rawUrl.startsWith('https://') || rawUrl.startsWith('http://')) {
+      window.open(rawUrl, '_blank', 'noopener,noreferrer');
+    } else {
+      window.open('https://india.gov.in', '_blank', 'noopener,noreferrer');
+    }
   }
 }

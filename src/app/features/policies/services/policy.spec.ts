@@ -1,11 +1,14 @@
 import { TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
 import { Policy } from './policy';
 
 describe('Policy Service', () => {
   let service: Policy;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({});
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient()]
+    });
     service = TestBed.inject(Policy);
     service.resetToDefaults();
   });

@@ -1,4 +1,4 @@
-﻿import { Injectable, signal, PLATFORM_ID, inject } from '@angular/core';
+import { Injectable, signal, PLATFORM_ID, inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 
 export type Theme = 'light' | 'dark';
@@ -10,6 +10,8 @@ export class ThemeService {
   private readonly STORAGE_KEY = 'policygpt-theme';
   private readonly platformId = inject(PLATFORM_ID);
 
+  private transitionTimer: any = null;
+
   readonly currentTheme = signal<Theme>('light');
   readonly isDarkMode = signal<boolean>(false);
 
@@ -17,10 +19,10 @@ export class ThemeService {
     if (isPlatformBrowser(this.platformId)) {
       const savedTheme = localStorage.getItem(this.STORAGE_KEY) as Theme | null;
       if (savedTheme === 'dark' || savedTheme === 'light') {
-        this.setTheme(savedTheme);
+        this.applyTheme(savedTheme, false);
       } else {
         const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-        this.setTheme(prefersDark ? 'dark' : 'light');
+        this.applyTheme(prefersDark ? 'dark' : 'light', false);
       }
     }
   }
@@ -31,12 +33,28 @@ export class ThemeService {
   }
 
   setTheme(theme: Theme): void {
+    this.applyTheme(theme, true);
+  }
+
+  private applyTheme(theme: Theme, animate = false): void {
     this.currentTheme.set(theme);
     this.isDarkMode.set(theme === 'dark');
 
     if (isPlatformBrowser(this.platformId)) {
       localStorage.setItem(this.STORAGE_KEY, theme);
       const root = document.documentElement;
+
+      if (animate) {
+        root.classList.add('theme-transitioning');
+        if (this.transitionTimer) {
+          clearTimeout(this.transitionTimer);
+        }
+        this.transitionTimer = setTimeout(() => {
+          root.classList.remove('theme-transitioning');
+          this.transitionTimer = null;
+        }, 450);
+      }
+
       if (theme === 'dark') {
         root.setAttribute('data-theme', 'dark');
         document.body.classList.add('dark-theme');

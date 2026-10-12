@@ -81,6 +81,14 @@ export class Scheme {
   }
 
   /**
+   * Reset local schemes in memory to initial default values (useful for tests and state resets).
+   */
+  resetToDefaults(): void {
+    this._schemes.set([...INITIAL_SCHEMES]);
+    this._error.set(null);
+  }
+
+  /**
    * Return all schemes currently in state.
    */
   getAll(): SchemeItem[] {
@@ -152,7 +160,7 @@ export class Scheme {
    * Synchronous creation for existing components.
    */
   create(newScheme: Omit<SchemeItem, 'updatedAt'>): SchemeItem {
-    const tempId = `TEMP-SCH-${Date.now()}`;
+    const tempId = newScheme.id || `TEMP-SCH-${Date.now()}`;
     const today = this.formatDate(new Date());
     const optimistic: SchemeItem = {
       ...newScheme,
@@ -272,10 +280,12 @@ export class Scheme {
   }
 
   /**
-   * Delete a scheme permanently or archive.
+   * Delete a scheme permanently from local state.
    */
   delete(id: string): boolean {
-    this.archive(id);
+    const item = this.getById(id);
+    if (!item) return false;
+    this._schemes.update(current => current.filter(s => s.id !== item.id));
     return true;
   }
 

@@ -144,9 +144,59 @@ body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  transition: background-color 0.2s ease, color 0.2s ease;
-  overflow-x: hidden;
+  transition: background-color 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              color 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow-x: clip;
   max-width: 100%;
+}
+
+/* ==========================================================================
+   Smooth Theme Transitions (Light <-> Dark)
+   ========================================================================== */
+html.theme-transitioning,
+html.theme-transitioning *,
+html.theme-transitioning *::before,
+html.theme-transitioning *::after {
+  transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              background 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              fill 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              stroke 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  transition-delay: 0s !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.theme-transitioning,
+  html.theme-transitioning *,
+  html.theme-transitioning *::before,
+  html.theme-transitioning *::after {
+    transition: none !important;
+  }
+}
+
+/* Base persistent smooth transition on key layout surfaces */
+header,
+nav,
+aside,
+main,
+footer,
+.card,
+.navbar,
+.sidebar,
+.dashboard-layout,
+.dashboard-content,
+.dashboard-page,
+.auth-layout,
+.citizen-dashboard-root,
+.compare-root,
+.eligibility-root,
+.public-about-root {
+  transition: background-color 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              color 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Global media and SVG normalization */
@@ -226,25 +276,30 @@ svg {
   background: var(--bg-card-subtle);
   color: var(--text-main);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
+  overflow: hidden;
 }
 
 .theme-toggle-btn:hover {
   border-color: var(--brand-blue);
   color: var(--brand-blue);
   background: var(--bg-surface-hover);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.15);
+}
+
+.theme-toggle-btn:active {
+  transform: scale(0.92);
 }
 
 .theme-toggle-btn svg {
   width: 18px;
   height: 18px;
-  transition: transform 0.2s ease;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease;
 }
 
 .theme-toggle-btn:hover svg {
-  transform: rotate(15deg);
+  transform: rotate(20deg) scale(1.1);
 }
 
 /* ==========================================================================
@@ -291,11 +346,17 @@ svg {
   color: #F8FAFC !important;
 }
 
-[data-theme="dark"] .logo-text {
+[data-theme="dark"] .logo-text,
+body.dark-theme .logo-text {
   color: #F8FAFC !important;
 }
 
 [data-theme="dark"] .logo-text .highlight,
+[data-theme="dark"] .logo-highlight,
+[data-theme="dark"] .brand-highlight,
+body.dark-theme .logo-text .highlight,
+body.dark-theme .logo-highlight,
+body.dark-theme .brand-highlight,
 [data-theme="dark"] .logo-icon {
   color: #60A5FA !important;
 }
@@ -1081,4 +1142,154 @@ button:disabled {
 .btn.is-loading,
 button.is-loading {
   pointer-events: none !important;
+}
+
+/* ==========================================================
+   PUBLIC DASHBOARD & LARGE SCREENS / 4K RESPONSIVE SCALING
+   (1024px-1200px, 1200px-1440px, 1920px 2K, 2400px+ 4K)
+   ========================================================== */
+
+/* 1. Fluid Root Typography Scaling on High-Res Monitors */
+@media (min-width: 1440px) {
+  html {
+    font-size: 16.5px;
+  }
+}
+
+@media (min-width: 1920px) {
+  html {
+    font-size: 17.5px;
+  }
+}
+
+@media (min-width: 2400px) {
+  html {
+    font-size: 19.5px;
+  }
+}
+
+@media (min-width: 3200px) {
+  html {
+    font-size: 22px;
+  }
+}
+
+/* 2. Public Container Expansion for 1200px - 1440px */
+@media (min-width: 1200px) {
+  .hero-container,
+  .schemes-section,
+  .categories-section,
+  .works-section,
+  .faq-container,
+  .assistant-cta-section,
+  .bottom-banner-section,
+  .breadcrumbs-bar .breadcrumbs-container,
+  .about-page-root .content-container,
+  .public-policies-root .content-container,
+  .public-schemes-root .content-container,
+  .public-faqs-root .content-container {
+    max-width: 1320px !important;
+    width: min(100% - 64px, 1320px) !important;
+  }
+}
+
+/* 3. Extra-Large Displays (1440px - 1919px) */
+@media (min-width: 1440px) {
+  .hero-container,
+  .schemes-section,
+  .categories-section,
+  .works-section,
+  .faq-container,
+  .assistant-cta-section,
+  .bottom-banner-section,
+  .breadcrumbs-bar .breadcrumbs-container,
+  .about-page-root .content-container,
+  .public-policies-root .content-container,
+  .public-schemes-root .content-container,
+  .public-faqs-root .content-container {
+    max-width: 1480px !important;
+    width: min(100% - 80px, 1480px) !important;
+  }
+}
+
+/* 4. Full HD / 2K Displays (1920px - 2399px) */
+@media (min-width: 1920px) {
+  .hero-container,
+  .schemes-section,
+  .categories-section,
+  .works-section,
+  .faq-container,
+  .assistant-cta-section,
+  .bottom-banner-section,
+  .breadcrumbs-bar .breadcrumbs-container,
+  .about-page-root .content-container,
+  .public-policies-root .content-container,
+  .public-schemes-root .content-container,
+  .public-faqs-root .content-container {
+    max-width: 1780px !important;
+    width: min(100% - 96px, 1780px) !important;
+  }
+
+  .schemes-section .schemes-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 28px !important;
+  }
+
+  .categories-section .categories-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 24px !important;
+  }
+}
+
+/* 5. 2.4K - 2.5K Displays (2400px - 3199px) */
+@media (min-width: 2400px) {
+  .hero-container,
+  .schemes-section,
+  .categories-section,
+  .works-section,
+  .faq-container,
+  .assistant-cta-section,
+  .bottom-banner-section,
+  .breadcrumbs-bar .breadcrumbs-container,
+  .about-page-root .content-container,
+  .public-policies-root .content-container,
+  .public-schemes-root .content-container,
+  .public-faqs-root .content-container {
+    max-width: 2240px !important;
+    width: min(100% - 120px, 2240px) !important;
+  }
+
+  .schemes-section .schemes-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 36px !important;
+  }
+
+  .categories-section .categories-grid {
+    grid-template-columns: repeat(6, 1fr) !important;
+    gap: 24px !important;
+  }
+
+  .works-section .steps-grid,
+  .about-page-root .steps-grid {
+    gap: 36px !important;
+  }
+}
+
+/* 6. 4K Ultra Displays (3200px - 3840px+) */
+@media (min-width: 3200px) {
+  .hero-container,
+  .schemes-section,
+  .categories-section,
+  .works-section,
+  .faq-container,
+  .assistant-cta-section,
+  .bottom-banner-section,
+  .breadcrumbs-bar .breadcrumbs-container,
+  .about-page-root .content-container,
+  .public-policies-root .content-container,
+  .public-schemes-root .content-container,
+  .public-faqs-root .content-container {
+    max-width: 2880px !important;
+    width: min(100% - 160px, 2880px) !important;
+  }
 }

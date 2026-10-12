@@ -14,8 +14,9 @@
   <header class="public-navbar" data-purpose="navbar">
     <div class="navbar-inner">
       <div class="logo-wrapper">
-        <a routerLink="/citizen" class="logo-link">
-          <span class="logo-text">PolicyGPT</span>
+        <a routerLink="/citizen" class="logo-link" aria-label="PolicyGPT Citizen Portal">
+          <img src="/assets/logo-icon.png" alt="PolicyGPT" class="logo-icon-img" width="34" height="34">
+          <span class="logo-text">Policy<span class="logo-highlight">GPT</span></span>
         </a>
       </div>
       <nav class="nav-links" aria-label="Citizen Navigation">
@@ -27,7 +28,7 @@
         <a routerLink="/citizen" fragment="how-it-works" class="nav-link">About</a>
         <a routerLink="/citizen" fragment="ai-assistant" class="nav-link">Help</a>
         @if (auth.isAuthenticated()) {
-        <a routerLink="/dashboard" class="nav-link auth-dashboard-link">Role Dashboard</a>
+        <a routerLink="/dashboard" class="nav-link auth-dashboard-link">Dashboard</a>
         } @else {
         <a routerLink="/login" class="nav-link btn-login">Login</a>
         <a routerLink="/register" class="btn-primary btn-register">Register</a>

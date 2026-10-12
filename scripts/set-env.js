@@ -13,6 +13,10 @@ const rawUrl = (
 // Format URL or fallback to default
 let apiUrl = 'http://127.0.0.1:8000/api/v1';
 
+if (!rawUrl) {
+  console.warn('[set-env] WARNING: No API_URL, VITE_API_URL, or BACKEND_URL provided! Falling back to localhost "http://127.0.0.1:8000/api/v1". Ensure API_URL is configured in your production CI/CD environment.');
+}
+
 if (rawUrl) {
   // Strip trailing slashes
   let formattedUrl = rawUrl.replace(/\/+$/, '');

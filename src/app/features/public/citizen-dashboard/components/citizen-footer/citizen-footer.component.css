@@ -45,14 +45,39 @@
 
 .public-footer .footer-brand .logo-wrapper {
   margin-bottom: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.public-footer .footer-logo-img {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  object-fit: contain;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.2);
+  flex-shrink: 0;
+  display: block;
 }
 
 .public-footer .footer-brand .logo-wrapper .brand-title {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
   font-size: 1.25rem;
   font-weight: 800;
-  color: var(--brand-blue, #1e3a8a);
+  color: #071A45;
   letter-spacing: -0.02em;
+}
+
+.public-footer .footer-brand .logo-wrapper .brand-highlight {
+  color: #2563EB;
+}
+
+:host-context([data-theme="dark"]) .public-footer .footer-brand .logo-wrapper .brand-title {
+  color: #FFFFFF !important;
+}
+
+:host-context([data-theme="dark"]) .public-footer .footer-brand .logo-wrapper .brand-highlight {
+  color: #60A5FA !important;
 }
 
 .public-footer .footer-brand .brand-subtitle {
@@ -112,4 +137,80 @@
   font-family: 'Inter', sans-serif;
   font-size: 0.75rem;
   color: var(--text-disabled, #94a3b8);
+}
+
+/* Extra-Large Displays (1440px - 1919px) */
+@media (min-width: 1440px) {
+  .public-footer .footer-container {
+    width: min(100% - 80px, 1480px);
+  }
+}
+
+/* 2K & Ultra-wide Displays (1920px - 2399px) */
+@media (min-width: 1920px) {
+  .public-footer .footer-container {
+    width: min(100% - 96px, 1780px);
+    padding: 56px 0 28px;
+  }
+  .public-footer .footer-brand .logo-wrapper .brand-title {
+    font-size: 1.45rem;
+  }
+  .public-footer .footer-brand .brand-subtitle {
+    font-size: 0.95rem;
+    max-width: 440px;
+  }
+  .public-footer .links-column .footer-link {
+    font-size: 0.9rem;
+  }
+  .public-footer .links-column .column-title {
+    font-size: 0.85rem;
+  }
+}
+
+/* 2.4K - 2.5K Displays (2400px - 3199px) */
+@media (min-width: 2400px) {
+  .public-footer .footer-container {
+    width: min(100% - 120px, 2240px);
+    padding: 64px 0 36px;
+  }
+  .public-footer .footer-brand .logo-wrapper .brand-title {
+    font-size: 1.65rem;
+  }
+  .public-footer .footer-brand .brand-subtitle {
+    font-size: 1.05rem;
+    max-width: 520px;
+  }
+  .public-footer .links-column .footer-link {
+    font-size: 1rem;
+  }
+  .public-footer .links-column .column-title {
+    font-size: 0.95rem;
+  }
+  .public-footer .footer-bottom {
+    font-size: 0.9rem;
+  }
+}
+
+/* 4K Ultra Displays (3200px - 3840px+) */
+@media (min-width: 3200px) {
+  .public-footer .footer-container {
+    width: min(100% - 160px, 2880px);
+    padding: 76px 0 44px;
+  }
+  .public-footer .footer-brand .logo-wrapper .brand-title {
+    font-size: 1.95rem;
+  }
+  .public-footer .footer-brand .brand-subtitle {
+    font-size: 1.25rem;
+    max-width: 640px;
+  }
+  .public-footer .links-column .footer-link {
+    font-size: 1.15rem;
+  }
+  .public-footer .links-column .column-title {
+    font-size: 1.1rem;
+  }
+  .public-footer .footer-bottom {
+    font-size: 1.05rem;
+  }
 }

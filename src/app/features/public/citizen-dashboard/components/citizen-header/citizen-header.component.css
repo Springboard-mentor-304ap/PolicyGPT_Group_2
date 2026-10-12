@@ -7,10 +7,13 @@
 }
 
 .public-header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
   width: 100%;
   background-color: var(--bg-card, #ffffff);
   border-bottom: 1px solid var(--border-color, #e2e8f0);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 /* Centered modern SaaS max-width container */
@@ -48,17 +51,47 @@
   text-decoration: none;
   display: inline-flex;
   align-items: center;
+  gap: 10px;
   outline: none;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.public-header .logo-link:hover {
+  transform: translateY(-1px);
+}
+
+.public-header .logo-icon-img {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  object-fit: contain;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
+  flex-shrink: 0;
+  display: block;
 }
 
 .public-header .logo-text {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  font-size: 1.4rem;
+  font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 1.35rem;
   font-weight: 800;
-  color: var(--brand-blue, #1e3a8a);
+  color: #071A45;
   letter-spacing: -0.025em;
   line-height: 1;
   white-space: nowrap;
+}
+
+.public-header .logo-highlight {
+  color: #2563EB;
+}
+
+:host-context([data-theme="dark"]) .public-header .logo-text,
+:host-context(body.dark-theme) .public-header .logo-text {
+  color: #FFFFFF !important;
+}
+
+:host-context([data-theme="dark"]) .public-header .logo-highlight,
+:host-context(body.dark-theme) .public-header .logo-highlight {
+  color: #60A5FA !important;
 }
 
 /* Center: Navigation Links */
@@ -131,20 +164,32 @@
   background-color: var(--bg-card-subtle, #f8fafc);
   color: var(--text-main, #0f172a);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   flex-shrink: 0;
   box-sizing: border-box;
+  position: relative;
+  overflow: hidden;
 }
 
 .public-header .theme-toggle-btn:hover {
   border-color: var(--brand-blue, #2563eb);
   color: var(--brand-blue, #2563eb);
   background-color: var(--bg-surface-hover, #f1f5f9);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.15);
+}
+
+.public-header .theme-toggle-btn:active {
+  transform: scale(0.92);
 }
 
 .public-header .theme-toggle-btn svg {
   width: 18px;
   height: 18px;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease;
+}
+
+.public-header .theme-toggle-btn:hover svg {
+  transform: rotate(20deg) scale(1.1);
 }
 
 .public-header .auth-buttons {
@@ -321,5 +366,102 @@
   }
   .public-header .mobile-auth-actions {
     flex-direction: column;
+  }
+}
+
+/* Extra-Large Displays (1440px - 1919px) */
+@media (min-width: 1440px) {
+  .public-header .header-container {
+    max-width: 1480px;
+    height: 72px;
+    padding: 0 32px;
+  }
+  .public-header .logo-icon-img {
+    width: 40px;
+    height: 40px;
+  }
+  .public-header .logo-text {
+    font-size: 1.45rem;
+  }
+}
+
+/* 2K & Ultra-wide Displays (1920px - 2399px) */
+@media (min-width: 1920px) {
+  .public-header .header-container {
+    max-width: 1780px;
+    height: 80px;
+    padding: 0 40px;
+  }
+  .public-header .logo-icon-img {
+    width: 44px;
+    height: 44px;
+  }
+  .public-header .logo-text {
+    font-size: 1.6rem;
+  }
+  .public-header .nav-links {
+    gap: 36px;
+  }
+  .public-header .nav-link {
+    font-size: 1rem;
+  }
+  .public-header .btn-login,
+  .public-header .btn-register {
+    padding: 9px 20px;
+    font-size: 0.95rem;
+  }
+}
+
+/* 2.4K - 2.5K Displays (2400px - 3199px) */
+@media (min-width: 2400px) {
+  .public-header .header-container {
+    max-width: 2240px;
+    height: 88px;
+    padding: 0 48px;
+  }
+  .public-header .logo-icon-img {
+    width: 48px;
+    height: 48px;
+  }
+  .public-header .logo-text {
+    font-size: 1.8rem;
+  }
+  .public-header .nav-links {
+    gap: 44px;
+  }
+  .public-header .nav-link {
+    font-size: 1.1rem;
+  }
+  .public-header .btn-login,
+  .public-header .btn-register {
+    padding: 11px 24px;
+    font-size: 1.05rem;
+  }
+}
+
+/* 4K Ultra Displays (3200px - 3840px+) */
+@media (min-width: 3200px) {
+  .public-header .header-container {
+    max-width: 2880px;
+    height: 98px;
+    padding: 0 60px;
+  }
+  .public-header .logo-icon-img {
+    width: 54px;
+    height: 54px;
+  }
+  .public-header .logo-text {
+    font-size: 2.1rem;
+  }
+  .public-header .nav-links {
+    gap: 52px;
+  }
+  .public-header .nav-link {
+    font-size: 1.25rem;
+  }
+  .public-header .btn-login,
+  .public-header .btn-register {
+    padding: 13px 28px;
+    font-size: 1.15rem;
   }
 }

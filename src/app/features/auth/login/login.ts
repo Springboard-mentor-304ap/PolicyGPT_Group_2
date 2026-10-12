@@ -13,8 +13,8 @@ import { Role } from '../../../models/role.model';
   styleUrl: './login.css',
 })
 export class Login implements OnInit {
-  protected email = 'citizen@policygpt.gov.in';
-  protected password = 'CitizenPass123!';
+  protected email = '';
+  protected password = '';
   protected selectedRole = Role.CITIZEN;
   protected rememberMe = true;
   protected showPassword = false;
@@ -68,6 +68,13 @@ export class Login implements OnInit {
 
     if (!email || !password) {
       this.errorMessage = 'Please enter both email and password.';
+      this.cdr.detectChanges();
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      this.errorMessage = 'Please enter a valid email address.';
       this.cdr.detectChanges();
       return;
     }
