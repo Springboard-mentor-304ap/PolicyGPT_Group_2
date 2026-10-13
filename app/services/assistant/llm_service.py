@@ -54,7 +54,11 @@ class LLMService:
     @classmethod
     def _call_gemini(cls, api_key: str, system_prompt: str, user_prompt: str) -> Optional[str]:
         model = settings.LLM_MODEL_NAME if "gemini" in settings.LLM_MODEL_NAME else "gemini-1.5-flash"
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+        headers = {
+            "Content-Type": "application/json",
+            "x-goog-api-key": api_key,
+        }
         payload = {
             "contents": [
                 {
@@ -68,7 +72,7 @@ class LLMService:
             },
         }
         with httpx.Client(timeout=15.0) as client:
-            resp = client.post(url, json=payload)
+            resp = client.post(url, headers=headers, json=payload)
             if resp.status_code == 200:
                 data = resp.json()
                 candidates = data.get("candidates", [])

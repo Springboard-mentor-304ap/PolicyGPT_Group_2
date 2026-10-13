@@ -1,6 +1,13 @@
 from datetime import datetime, timezone
+import base64
+import json
 import logging
+import re
 from typing import List, Optional, Tuple, Union
+import urllib.error
+import urllib.parse
+import urllib.request
+import uuid
 from fastapi import HTTPException, status
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
@@ -133,44 +140,310 @@ class NotificationService:
         )
 
     @staticmethod
+    def normalize_phone_number(phone_number: Optional[str], default_country_code: str = "+91") -> Optional[str]:
+        """
+        Normalize mobile numbers to standard international E.164 format.
+        Handles standard Indian 10-digit mobile numbers (e.g. 9876543210 -> +919876543210),
+        numbers with leading 0 (09876543210 -> +919876543210), numbers with country code without +
+        (919876543210 -> +919876543210), and existing E.164 numbers (+919876543210, +1737...).
+        """
+        if not phone_number:
+            return None
+        clean = re.sub(r"[\s\-\(\)\.]", "", phone_number.strip())
+        if not clean:
+            return None
+
+        # Already in international E.164 format
+        if clean.startswith("+"):
+            digits = re.sub(r"\D", "", clean[1:])
+            if 7 <= len(digits) <= 15:
+                return f"+{digits}"
+            return None
+
+        # Indian 10-digit format (mobile ranges starting with 6, 7, 8, or 9)
+        if len(clean) == 10 and clean[0] in "6789":
+            prefix = default_country_code if default_country_code.startswith("+") else f"+{default_country_code}"
+            return f"{prefix}{clean}"
+
+        # 11 digits with leading 0 (e.g. 09876543210)
+        if len(clean) == 11 and clean.startswith("0") and clean[1] in "6789":
+            prefix = default_country_code if default_country_code.startswith("+") else f"+{default_country_code}"
+            return f"{prefix}{clean[1:]}"
+
+        # 12 digits starting with 91 (e.g. 919876543210)
+        if len(clean) == 12 and clean.startswith("91"):
+            return f"+{clean}"
+
+        # Generic numeric fallback: if 10 to 15 digits
+        if clean.isdigit() and 10 <= len(clean) <= 15:
+            if len(clean) == 10:
+                prefix = default_country_code if default_country_code.startswith("+") else f"+{default_country_code}"
+                return f"{prefix}{clean}"
+            return f"+{clean}"
+
+        return None
+
+    @staticmethod
+    def dispatch_sms(
+        phone_number: str,
+        message: str,
+        force_mock: bool = False,
+    ) -> dict:
+        """
+        Dispatch an SMS alert via Twilio Programmable Messaging API or Mock Delivery Engine.
+        Returns a structured delivery report:
+        {
+            "success": bool,
+            "status": str,  # "queued", "delivered", "mock_delivered", "failed", "not_configured", "invalid_number"
+            "message_sid": Optional[str],
+            "error_code": Optional[int],
+            "error_message": Optional[str],
+            "recipient": Optional[str],
+            "is_mock": bool,
+        }
+        """
+        if not phone_number:
+            logger.warning("[Twilio SMS Dispatcher] No recipient phone number provided.")
+            return {
+                "success": False,
+                "status": "invalid_number",
+                "error_code": 21211,
+                "error_message": "No recipient phone number provided.",
+                "recipient": None,
+                "is_mock": False,
+            }
+
+        recipient = NotificationService.normalize_phone_number(
+            phone_number=phone_number,
+            default_country_code=getattr(settings, "TWILIO_DEFAULT_COUNTRY_CODE", "+91"),
+        )
+        if not recipient:
+            logger.warning(f"[Twilio SMS Dispatcher] Recipient phone number '{phone_number}' could not be normalized to E.164.")
+            return {
+                "success": False,
+                "status": "invalid_number",
+                "error_code": 21211,
+                "error_message": f"Recipient phone number '{phone_number}' could not be normalized to valid E.164 format.",
+                "recipient": phone_number,
+                "is_mock": False,
+            }
+
+        # 1. Mock Mode Check (explicit test flag or settings.TWILIO_MOCK_MODE)
+        is_mock_enabled = force_mock or getattr(settings, "TWILIO_MOCK_MODE", False)
+        if is_mock_enabled:
+            mock_sid = f"SMmock_{uuid.uuid4().hex[:26]}"
+            logger.info(
+                f"[Twilio SMS Dispatcher (MOCK)] Simulated SMS successfully dispatched to {recipient}. "
+                f"SID: {mock_sid}. Message: '{message[:50]}...'"
+            )
+            return {
+                "success": True,
+                "status": "mock_delivered",
+                "message_sid": mock_sid,
+                "error_code": None,
+                "error_message": None,
+                "recipient": recipient,
+                "is_mock": True,
+            }
+
+        # 2. Twilio Credentials Verification
+        if not settings.TWILIO_ACCOUNT_SID or not settings.TWILIO_AUTH_TOKEN or not settings.TWILIO_PHONE_NUMBER:
+            logger.info(
+                f"[Twilio SMS Dispatcher] Twilio credentials not configured. Skipping SMS to {recipient}. Message: '{message[:30]}...'"
+            )
+            return {
+                "success": False,
+                "status": "not_configured",
+                "error_code": None,
+                "error_message": "Twilio credentials (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER) not configured.",
+                "recipient": recipient,
+                "is_mock": False,
+            }
+
+        # 3. Format Sender Phone Number
+        sender = settings.TWILIO_PHONE_NUMBER.strip()
+        if not sender.startswith("+") and sender.isdigit():
+            if len(sender) == 10:
+                sender = f"+91{sender}"
+            else:
+                sender = f"+{sender}"
+
+        # 4. Dispatch via Twilio Programmable Messaging REST API
+        auth_str = f"{settings.TWILIO_ACCOUNT_SID}:{settings.TWILIO_AUTH_TOKEN}"
+        auth_b64 = base64.b64encode(auth_str.encode()).decode()
+        url = f"https://api.twilio.com/2010-04-01/Accounts/{settings.TWILIO_ACCOUNT_SID}/Messages.json"
+        data = urllib.parse.urlencode({
+            "From": sender,
+            "To": recipient,
+            "Body": message,
+        }).encode()
+
+        req = urllib.request.Request(
+            url,
+            data=data,
+            headers={
+                "Authorization": f"Basic {auth_b64}",
+                "Accept": "application/json",
+            },
+        )
+
+        try:
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                resp_bytes = resp.read()
+                resp_json = json.loads(resp_bytes.decode("utf-8", errors="replace")) if resp_bytes else {}
+                sid = resp_json.get("sid")
+                msg_status = resp_json.get("status", "queued")
+                logger.info(
+                    f"[Twilio SMS Dispatcher] SMS accepted and queued by Twilio (SID: {sid}, Status: '{msg_status}') to {recipient}"
+                )
+                return {
+                    "success": True,
+                    "status": msg_status,
+                    "message_sid": sid,
+                    "error_code": None,
+                    "error_message": None,
+                    "recipient": recipient,
+                    "is_mock": False,
+                }
+        except urllib.error.HTTPError as http_err:
+            raw_body = http_err.read().decode("utf-8", errors="replace")
+            err_code = None
+            err_msg = f"HTTP Error {http_err.code}: {http_err.reason}"
+            try:
+                err_json = json.loads(raw_body)
+                err_code = err_json.get("code")
+                err_msg = err_json.get("message") or err_msg
+            except Exception:
+                pass
+
+            if err_code == 572006:
+                logger.error(
+                    f"[Twilio SMS Dispatcher] Twilio Trial Restriction (Error 572006): Trial accounts can only use predefined SMS templates. "
+                    f"Freeform SMS to {recipient} rejected by Twilio. Enable TWILIO_MOCK_MODE=True in .env for local testing, or upgrade Twilio account."
+                )
+            elif err_code == 21608:
+                logger.error(
+                    f"[Twilio SMS Dispatcher] Twilio Trial Error 21608: Recipient {recipient} is not verified. "
+                    f"Trial accounts can only send SMS to numbers verified in Twilio Console."
+                )
+            elif err_code == 21606:
+                logger.error(
+                    f"[Twilio SMS Dispatcher] Twilio Error 21606: The 'From' number {sender} is not an SMS-capable number owned by this account."
+                )
+            elif err_code in (21211, 21614):
+                logger.error(
+                    f"[Twilio SMS Dispatcher] Twilio Error {err_code}: 'To' number {recipient} is invalid or incapable of receiving SMS."
+                )
+            else:
+                logger.error(
+                    f"[Twilio SMS Dispatcher] Failed to send SMS to {recipient}: Code {err_code} - {err_msg}"
+                )
+
+            return {
+                "success": False,
+                "status": "failed",
+                "message_sid": None,
+                "error_code": err_code,
+                "error_message": err_msg,
+                "recipient": recipient,
+                "is_mock": False,
+            }
+        except Exception as ex:
+            logger.error(f"[Twilio SMS Dispatcher] Unexpected failure sending SMS to {recipient}: {str(ex)}")
+            return {
+                "success": False,
+                "status": "failed",
+                "message_sid": None,
+                "error_code": None,
+                "error_message": str(ex),
+                "recipient": recipient,
+                "is_mock": False,
+            }
+
+    @staticmethod
     def send_sms(phone_number: str, message: str) -> bool:
         """
         Send an SMS notification via Twilio if configured.
         Gracefully handles missing credentials and logs actions.
         """
-        if not phone_number:
-            logger.warning("[Twilio SMS Dispatcher] No recipient phone number provided.")
-            return False
+        res = NotificationService.dispatch_sms(phone_number=phone_number, message=message)
+        return bool(res.get("success", False))
 
-        if not settings.TWILIO_ACCOUNT_SID or not settings.TWILIO_AUTH_TOKEN or not settings.TWILIO_PHONE_NUMBER:
-            logger.info(
-                f"[Twilio SMS Dispatcher] Twilio credentials not configured. Skipping SMS to {phone_number}. Message: '{message[:30]}...'"
-            )
-            return False
+    @staticmethod
+    def test_sms_diagnostics(
+        phone_number: Optional[str] = None,
+        message: Optional[str] = None,
+        force_mock: bool = False,
+    ) -> dict:
+        """
+        Comprehensive administrative SMS diagnostic check.
+        Inspects credentials, verifies E.164 normalization, queries Twilio account state,
+        and executes a safe test dispatch to a single verified recipient.
+        """
+        twilio_sid = settings.TWILIO_ACCOUNT_SID
+        twilio_auth = settings.TWILIO_AUTH_TOKEN
+        twilio_phone = settings.TWILIO_PHONE_NUMBER
 
-        try:
-            import urllib.parse
-            import urllib.request
-            import base64
+        sid_set = bool(twilio_sid)
+        auth_set = bool(twilio_auth)
+        phone_set = bool(twilio_phone)
 
-            auth_str = f"{settings.TWILIO_ACCOUNT_SID}:{settings.TWILIO_AUTH_TOKEN}"
-            auth_b64 = base64.b64encode(auth_str.encode()).decode()
-            url = f"https://api.twilio.com/2010-04-01/Accounts/{settings.TWILIO_ACCOUNT_SID}/Messages.json"
-            data = urllib.parse.urlencode({
-                "From": settings.TWILIO_PHONE_NUMBER,
-                "To": phone_number,
-                "Body": message,
-            }).encode()
+        if twilio_sid and len(twilio_sid) > 8:
+            redacted_sid = f"{twilio_sid[:4]}...{twilio_sid[-4:]}"
+        elif twilio_sid:
+            redacted_sid = "SET"
+        else:
+            redacted_sid = "NOT_SET"
 
-            req = urllib.request.Request(url, data=data, headers={"Authorization": f"Basic {auth_b64}"})
-            with urllib.request.urlopen(req, timeout=10) as resp:
-                if resp.status in (200, 201):
-                    logger.info(f"[Twilio SMS Dispatcher] SMS sent to {phone_number}")
-                    return True
-            return False
-        except Exception as e:
-            logger.error(f"[Twilio SMS Dispatcher] Failed to send SMS to {phone_number}: {str(e)}")
-            return False
+        if twilio_phone and len(twilio_phone) > 6:
+            redacted_from = f"{twilio_phone[:3]}...{twilio_phone[-3:]}"
+        elif twilio_phone:
+            redacted_from = "SET"
+        else:
+            redacted_from = "NOT_SET"
+
+        target_phone = phone_number or settings.TWILIO_PHONE_NUMBER
+        normalized_target = NotificationService.normalize_phone_number(
+            phone_number=target_phone,
+            default_country_code=getattr(settings, "TWILIO_DEFAULT_COUNTRY_CODE", "+91"),
+        )
+        test_msg = message or "PolicyGPT Diagnostic Alert: Twilio SMS configuration test."
+
+        dispatch_res = NotificationService.dispatch_sms(
+            phone_number=normalized_target or (target_phone or ""),
+            message=test_msg,
+            force_mock=force_mock,
+        )
+
+        diagnostics = {
+            "credentials_present": sid_set and auth_set and phone_set,
+            "account_sid_configured": sid_set,
+            "account_sid_redacted": redacted_sid,
+            "auth_token_configured": auth_set,
+            "phone_number_configured": phone_set,
+            "phone_number_redacted": redacted_from,
+            "mock_mode_active": force_mock or getattr(settings, "TWILIO_MOCK_MODE", False),
+            "normalized_recipient": normalized_target,
+            "default_country_code": getattr(settings, "TWILIO_DEFAULT_COUNTRY_CODE", "+91"),
+            "programmable_messaging_used": True,
+            "notes": [
+                "Twilio Programmable Messaging API (/2010-04-01/Accounts/.../Messages.json) is used.",
+                "E.164 format with country code (+91 for India) is required for all recipients.",
+                "Twilio trial accounts can only send to verified phone numbers and restrict arbitrary text bodies (Error 572006).",
+                "For production in India, DLT registration and approved templates are required by Indian telecom operators.",
+            ],
+        }
+
+        return {
+            "success": dispatch_res.get("success", False),
+            "mode": "mock" if dispatch_res.get("is_mock") else "live",
+            "recipient": dispatch_res.get("recipient"),
+            "message_sid": dispatch_res.get("message_sid"),
+            "status": dispatch_res.get("status"),
+            "error_code": dispatch_res.get("error_code"),
+            "error_message": dispatch_res.get("error_message"),
+            "diagnostics": diagnostics,
+        }
 
     @staticmethod
     def send_sms_background(phone_number: str, message: str) -> None:
@@ -328,7 +601,7 @@ class NotificationService:
                 )
 
             # SMS channel dispatch in background
-            if pref.sms_enabled and getattr(user, "phone_number", None) and channel in (NotificationChannel.SMS.value,):
+            if pref.sms_enabled and getattr(user, "phone_number", None) and channel in (NotificationChannel.SMS.value, NotificationChannel.IN_APP.value):
                 NotificationService.send_sms_background(
                     phone_number=user.phone_number,
                     message=f"{title}: {message}",
@@ -355,6 +628,7 @@ class NotificationService:
         count = 0
         now = datetime.now(timezone.utc)
         emails_to_dispatch = []
+        sms_to_dispatch = []
 
         for user in users:
             pref = NotificationService.get_or_create_preferences(db, user.id)
@@ -377,11 +651,18 @@ class NotificationService:
             if pref.email_enabled and channel in (NotificationChannel.EMAIL.value, NotificationChannel.IN_APP.value):
                 emails_to_dispatch.append(user.email)
 
+            if pref.sms_enabled and getattr(user, "phone_number", None) and channel in (NotificationChannel.SMS.value, NotificationChannel.IN_APP.value):
+                sms_to_dispatch.append((user.phone_number, f"{title}: {message}"))
+
         db.commit()
 
         # Asynchronously dispatch emails in background worker threads
         for to_email in emails_to_dispatch:
             NotificationService.send_email_background(to_email=to_email, subject=title, body=message)
+
+        # Asynchronously dispatch SMS in background worker threads
+        for phone_no, msg_text in sms_to_dispatch:
+            NotificationService.send_sms_background(phone_number=phone_no, message=msg_text)
 
         return count
 

@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.core.dependencies import get_current_user, get_db, require_roles
 from app.models.user import User, UserRole
 from app.schemas.user import UserRead, UserUpdate
+from app.services.notification_service import NotificationService
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
@@ -48,7 +49,17 @@ def update_current_user_profile(
         current_user.name = update_data["name"].strip()
 
     if "phone_number" in update_data:
-        current_user.phone_number = update_data["phone_number"].strip() if update_data["phone_number"] is not None else None
+        raw_phone = update_data["phone_number"]
+        if raw_phone:
+            norm_phone = NotificationService.normalize_phone_number(raw_phone)
+            if not norm_phone:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail="Invalid phone number. Please provide a valid 10-digit mobile number or standard E.164 format.",
+                )
+            current_user.phone_number = norm_phone
+        else:
+            current_user.phone_number = None
 
     if "age" in update_data:
         current_user.age = update_data["age"]

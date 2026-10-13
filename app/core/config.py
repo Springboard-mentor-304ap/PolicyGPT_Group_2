@@ -1,5 +1,5 @@
 from typing import List, Optional, Union
-from pydantic import field_validator
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 import json
 
@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     VERSION: str = "1.0.0"
     API_V1_STR: str = "/api/v1"
     ENVIRONMENT: str = "development"
+    ENABLE_API_DOCS: bool = True
 
     # Database
     DATABASE_URL: str = "postgresql://postgres:password@localhost:5432/policygpt"
@@ -37,6 +38,8 @@ class Settings(BaseSettings):
     TWILIO_ACCOUNT_SID: Optional[str] = None
     TWILIO_AUTH_TOKEN: Optional[str] = None
     TWILIO_PHONE_NUMBER: Optional[str] = None
+    TWILIO_MOCK_MODE: bool = False
+    TWILIO_DEFAULT_COUNTRY_CODE: str = "+91"
 
     # Firebase Cloud Messaging
     FIREBASE_CREDENTIALS_PATH: Optional[str] = None
@@ -60,6 +63,21 @@ class Settings(BaseSettings):
         elif isinstance(v, (list, set, tuple)):
             return list(v)
         return []
+
+    @model_validator(mode="after")
+    def validate_production_security(self) -> "Settings":
+        if self.ENVIRONMENT.lower() == "production":
+            insecure_keys = {
+                "dev-secret-key-change-in-production-policygpt",
+                "secret",
+                "changeme",
+                "password",
+            }
+            if self.SECRET_KEY in insecure_keys or len(self.SECRET_KEY) < 32:
+                raise ValueError(
+                    "Production Security Error: SECRET_KEY must be a secure, non-default string of at least 32 characters in production."
+                )
+        return self
 
     model_config = SettingsConfigDict(
         env_file=".env",

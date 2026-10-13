@@ -1,4 +1,4 @@
-﻿from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 import hashlib
 import hmac
 import logging
@@ -169,6 +169,13 @@ If you did not create a PolicyGPT account, you can safely ignore this email.
             )
 
         role = user_in.role if isinstance(user_in.role, UserRole) else UserRole.from_string(str(user_in.role))
+        # Prevent privilege escalation: self-registration cannot create administrative or official accounts
+        if role in (UserRole.ADMINISTRATOR, UserRole.GOVERNMENT_OFFICIAL):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Privilege escalation blocked: Self-registration with Administrator or Government Official role is forbidden.",
+            )
+
 
         db_user = User(
             name=user_in.name.strip(),

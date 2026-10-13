@@ -1,17 +1,29 @@
-from typing import Generator
+from typing import Any, Dict, Generator
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker, Session
 from app.core.config import settings
 
 # Engine configuration with conditional parameters (e.g. SQLite vs PostgreSQL)
-connect_args = {}
+connect_args: Dict[str, Any] = {}
 if settings.DATABASE_URL.startswith("sqlite"):
     connect_args = {"check_same_thread": False}
 
+engine_kwargs: Dict[str, Any] = {
+    "connect_args": connect_args,
+}
+
+if not settings.DATABASE_URL.startswith("sqlite"):
+    engine_kwargs.update({
+        "pool_pre_ping": True,
+        "pool_size": 10,
+        "max_overflow": 20,
+        "pool_recycle": 3600,
+        "pool_timeout": 30,
+    })
+
 engine = create_engine(
     settings.DATABASE_URL,
-    connect_args=connect_args,
-    pool_pre_ping=True if not settings.DATABASE_URL.startswith("sqlite") else False,
+    **engine_kwargs,
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

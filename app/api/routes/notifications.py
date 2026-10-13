@@ -12,6 +12,8 @@ from app.schemas.notification import (
     NotificationPreferenceUpdate,
     NotificationRead,
     NotificationUnreadCountResponse,
+    TestSMSRequest,
+    TestSMSResponse,
 )
 from app.services.notification_service import NotificationService
 
@@ -158,6 +160,31 @@ def list_admin_notifications(
         "total_pages": total_pages,
         "results": [NotificationRead.model_validate(n) for n in results],
     }
+
+
+@router.post(
+    "/admin/test-sms",
+    response_model=TestSMSResponse,
+    summary="Test Twilio SMS alert delivery (Admin only)",
+)
+def test_sms(
+    payload: TestSMSRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles(UserRole.ADMINISTRATOR)),
+):
+    """
+    Diagnostic endpoint to safely test and inspect Twilio SMS dispatch.
+    Restricted to administrators.
+    Allows testing delivery to a single recipient with deep error inspection and optional mock mode.
+    """
+    target_phone = payload.phone_number or getattr(current_user, "phone_number", None)
+    res = NotificationService.test_sms_diagnostics(
+        phone_number=target_phone,
+        message=payload.message,
+        force_mock=payload.force_mock,
+    )
+    return TestSMSResponse(**res)
+
 
 
 @router.post(

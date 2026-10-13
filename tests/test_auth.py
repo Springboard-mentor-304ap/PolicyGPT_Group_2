@@ -232,3 +232,30 @@ def test_openapi_protected_routes_require_http_bearer(client: TestClient):
     assert any("HTTPBearer" in s for s in me_get_security)
     assert not any("OAuth2PasswordBearer" in s for s in me_get_security)
 
+
+def test_registration_privilege_escalation_blocked_admin(client: TestClient):
+    """Verify public registration cannot escalate privileges to ADMINISTRATOR."""
+    payload = {
+        "name": "Attacker Trying Admin",
+        "email": "attacker_admin@example.com",
+        "password": "SecurePassword123!",
+        "role": "ADMINISTRATOR"
+    }
+    response = client.post("/api/v1/auth/register", json=payload)
+    assert response.status_code == 403
+    assert "Privilege escalation blocked" in response.json()["detail"]
+
+
+def test_registration_privilege_escalation_blocked_gov_official(client: TestClient):
+    """Verify public registration cannot escalate privileges to GOVERNMENT_OFFICIAL."""
+    payload = {
+        "name": "Attacker Trying Official",
+        "email": "attacker_gov@example.com",
+        "password": "SecurePassword123!",
+        "role": "GOVERNMENT_OFFICIAL"
+    }
+    response = client.post("/api/v1/auth/register", json=payload)
+    assert response.status_code == 403
+    assert "Privilege escalation blocked" in response.json()["detail"]
+
+

@@ -81,3 +81,21 @@ class NotificationPaginationResponse(BaseModel):
     total_pages: int
     unread_count: int
     results: List[NotificationRead]
+
+
+class TestSMSRequest(BaseModel):
+    phone_number: Optional[str] = Field(None, description="Recipient phone number (e.g. +919876543210). If omitted, admin user's phone is used.")
+    message: Optional[str] = Field("PolicyGPT Diagnostic Test Alert: SMS integration is functioning.", description="Message text")
+    force_mock: bool = Field(False, description="If True, simulates sending without hitting Twilio API")
+
+
+class TestSMSResponse(BaseModel):
+    success: bool
+    mode: str
+    recipient: Optional[str] = None
+    message_sid: Optional[str] = None
+    status: str
+    error_code: Optional[int] = None
+    error_message: Optional[str] = None
+    diagnostics: dict = Field(default_factory=dict)
+

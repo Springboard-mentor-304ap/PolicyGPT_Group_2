@@ -369,3 +369,129 @@ def test_smtp_email_dispatch_success_and_error(monkeypatch):
     )
     assert conn_fail is False
 
+
+def test_normalize_phone_number():
+    """Verify E.164 phone normalization across multiple Indian and international formats."""
+    # 1. Standard 10-digit Indian numbers
+    assert NotificationService.normalize_phone_number("9876543210") == "+919876543210"
+    assert NotificationService.normalize_phone_number("6234567890") == "+916234567890"
+
+    # 2. 11 digits with leading 0
+    assert NotificationService.normalize_phone_number("09876543210") == "+919876543210"
+
+    # 3. 12 digits starting with 91
+    assert NotificationService.normalize_phone_number("919876543210") == "+919876543210"
+
+    # 4. Formatted string with spaces and dashes
+    assert NotificationService.normalize_phone_number(" +91 98765-43210 ") == "+919876543210"
+    assert NotificationService.normalize_phone_number("(+1) 737-250-8034") == "+17372508034"
+
+    # 5. Invalid formats
+    assert NotificationService.normalize_phone_number("12345") is None
+    assert NotificationService.normalize_phone_number("") is None
+    assert NotificationService.normalize_phone_number(None) is None
+
+
+def test_dispatch_sms_mock_mode():
+    """Verify dispatch_sms returns success with mock details when force_mock=True."""
+    res = NotificationService.dispatch_sms(
+        phone_number="9876543210",
+        message="Test alert message",
+        force_mock=True,
+    )
+    assert res["success"] is True
+    assert res["status"] == "mock_delivered"
+    assert res["is_mock"] is True
+    assert res["recipient"] == "+919876543210"
+    assert res["message_sid"].startswith("SMmock_")
+
+
+def test_dispatch_sms_unconfigured_credentials(monkeypatch):
+    """Verify dispatch_sms handles missing Twilio credentials safely."""
+    from app.core.config import settings
+    monkeypatch.setattr(settings, "TWILIO_ACCOUNT_SID", None)
+    monkeypatch.setattr(settings, "TWILIO_AUTH_TOKEN", None)
+    monkeypatch.setattr(settings, "TWILIO_PHONE_NUMBER", None)
+    monkeypatch.setattr(settings, "TWILIO_MOCK_MODE", False)
+
+    res = NotificationService.dispatch_sms(
+        phone_number="9876543210",
+        message="Test alert message",
+        force_mock=False,
+    )
+    assert res["success"] is False
+    assert res["status"] == "not_configured"
+    assert res["is_mock"] is False
+
+
+def test_dispatch_sms_twilio_http_error_handling(monkeypatch):
+    """Verify dispatch_sms catches Twilio HTTP error and parses specific error code (e.g. 572006)."""
+    import email.message
+    import io
+    import urllib.error
+    import urllib.request
+    from app.core.config import settings
+
+    monkeypatch.setattr(settings, "TWILIO_ACCOUNT_SID", "ACtest1234567890123456789012345678")
+    monkeypatch.setattr(settings, "TWILIO_AUTH_TOKEN", "authtest1234567890123456789012")
+    monkeypatch.setattr(settings, "TWILIO_PHONE_NUMBER", "+17372508034")
+    monkeypatch.setattr(settings, "TWILIO_MOCK_MODE", False)
+
+    error_payload = b'{"code": 572006, "message": "Invalid template name. Trial accounts can only use predefined SMS templates.", "status": 400}'
+
+    def mock_urlopen(req, timeout=10):
+        fp = io.BytesIO(error_payload)
+        raise urllib.error.HTTPError(
+            url="https://api.twilio.com",
+            code=400,
+            msg="Bad Request",
+            hdrs=email.message.Message(),
+            fp=fp,
+        )
+
+    monkeypatch.setattr(urllib.request, "urlopen", mock_urlopen)
+
+    res = NotificationService.dispatch_sms(
+        phone_number="9876543210",
+        message="PolicyGPT status alert",
+        force_mock=False,
+    )
+    assert res["success"] is False
+    assert res["status"] == "failed"
+    assert res["error_code"] == 572006
+    assert "predefined SMS templates" in res["error_message"]
+
+
+def test_admin_test_sms_endpoint(client: TestClient, admin_user: User, citizen_user: User, auth_headers):
+    """Verify POST /api/v1/notifications/admin/test-sms requires admin role and returns structured diagnostics."""
+    admin_hdrs = auth_headers(admin_user)
+    citizen_hdrs = auth_headers(citizen_user)
+
+    # 1. Citizen forbidden
+    res_cit = client.post(
+        "/api/v1/notifications/admin/test-sms",
+        headers=citizen_hdrs,
+        json={"phone_number": "9876543210", "force_mock": True},
+    )
+    assert res_cit.status_code == 403
+
+    # 2. Admin success in mock mode
+    res_adm = client.post(
+        "/api/v1/notifications/admin/test-sms",
+        headers=admin_hdrs,
+        json={
+            "phone_number": "9876543210",
+            "message": "Admin Test Alert",
+            "force_mock": True,
+        },
+    )
+    assert res_adm.status_code == 200
+    data = res_adm.json()
+    assert data["success"] is True
+    assert data["mode"] == "mock"
+    assert data["recipient"] == "+919876543210"
+    assert data["status"] == "mock_delivered"
+    assert "diagnostics" in data
+    assert data["diagnostics"]["programmable_messaging_used"] is True
+
+
